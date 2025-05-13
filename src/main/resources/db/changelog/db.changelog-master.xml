@@ -5,4 +5,9 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.5.xsd">
 
+    <include file="db/changelog/ddl/01-create-items-table.sql"/>
+    <include file="db/changelog/ddl/02-create-orders-table.sql"/>
+    <include file="db/changelog/ddl/03-create-order-item-table.sql"/>
+    <include file="db/changelog/ddl/04-create-cart-items-table.sql"/>
+
 </databaseChangeLog>
