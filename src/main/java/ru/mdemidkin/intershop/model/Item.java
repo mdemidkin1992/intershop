@@ -8,15 +8,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Builder
 @Table(name = "items")
 public class Item {
 
@@ -31,7 +31,7 @@ public class Item {
     @Column(name = "img_path")
     private String imgPath;
 
-    private BigDecimal price;
+    private Double price;
 
     @Column(name = "stock_count")
     private Integer stockCount;
