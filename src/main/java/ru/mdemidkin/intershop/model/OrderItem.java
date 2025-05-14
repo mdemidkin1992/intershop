@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +19,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Builder
 @Table(name = "order_items")
 public class OrderItem {
 
@@ -36,5 +38,5 @@ public class OrderItem {
     private Integer quantity;
 
     @Column(name = "price_per_item")
-    private BigDecimal pricePerItem;
+    private Double pricePerItem;
 }

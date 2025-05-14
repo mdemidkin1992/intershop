@@ -1,15 +1,24 @@
 package ru.mdemidkin.intershop.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import ru.mdemidkin.intershop.controller.dto.CartItemListDto;
+import ru.mdemidkin.intershop.controller.dto.ItemAction;
+import ru.mdemidkin.intershop.controller.dto.SortType;
+import ru.mdemidkin.intershop.model.Item;
+import ru.mdemidkin.intershop.model.Order;
 import ru.mdemidkin.intershop.service.CartService;
 import ru.mdemidkin.intershop.service.ItemService;
 import ru.mdemidkin.intershop.service.OrderService;
+
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -26,49 +35,66 @@ public class StoreController {
 
     @GetMapping("/main/items")
     public String getItems(@RequestParam(defaultValue = "") String search,
-                           @RequestParam(defaultValue = "NO") String sort,
-                           @RequestParam(defaultValue = "10") int pageSize,
+                           @RequestParam(defaultValue = "NO") SortType sort,
                            @RequestParam(defaultValue = "1") int pageNumber,
+                           @RequestParam(defaultValue = "10") int pageSize,
                            Model model) {
+
+        List<List<Item>> items = itemService.findAll(search, sort, pageNumber, pageSize);
+
+        model.addAttribute("search", search);
+        model.addAttribute("sort", sort);
 
         return "main.html";
     }
 
     @PostMapping("/main/items/{id}")
     public String modifyItemInCart(@PathVariable Long id,
-                                   @RequestParam String action) {
+                                   @RequestParam ItemAction action) {
+        itemService.updateCartItem(id, action);
         return "redirect:/main/items";
     }
 
     @GetMapping("/cart/items")
     public String getCartItems(Model model) {
+        CartItemListDto dto = itemService.getCartItemListDto();
+        model.addAttribute("items", dto.items());
+        model.addAttribute("total", dto.cartTotal());
+        model.addAttribute("empty", dto.isCartEmpty());
         return "cart.html";
     }
 
     @PostMapping("/cart/items/{id}")
     public String modifyCartItem(@PathVariable Long id,
-                                 @RequestParam String action) {
+                                 @RequestParam ItemAction action) {
+        itemService.updateCartItem(id, action);
         return "redirect:/cart/items";
     }
 
     @GetMapping("/items/{id}")
     public String getItem(@PathVariable Long id, Model model) {
+        Item item = itemService.getById(id);
+        model.addAttribute("item", item);
         return "item.html";
     }
 
     @PostMapping("/items/{id}")
     public String modifyItemFromCard(@PathVariable Long id,
-                                     @RequestParam String action) {
+                                     @RequestParam ItemAction action) {
+        itemService.updateCartItem(id, action);
         return "redirect:/items/" + id;
     }
 
     @PostMapping("/buy")
     public String buyItems() {
-        return "redirect:/orders/" + 1L + "?newOrder=true";
+        Order order = orderService.createOrder();
+        return "redirect:/orders/" + order.getId() + "?newOrder=true";
     }
 
     @GetMapping("/orders")
     public String getOrders(Model model) {
+        List<Order> orders = orderService.findAll();
+        model.addAttribute("orders", orders);
         return "orders.html";
     }
 
@@ -76,6 +102,9 @@ public class StoreController {
     public String getOrder(@PathVariable Long id,
                            @RequestParam(defaultValue = "false") boolean newOrder,
                            Model model) {
+        Order order = orderService.findById(id);
+        model.addAttribute("order", order);
+        model.addAttribute("newOrder", newOrder);
         return "order.html";
     }
 }
