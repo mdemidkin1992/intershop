@@ -10,12 +10,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.mdemidkin.intershop.controller.dto.CartItemListDto;
 import ru.mdemidkin.intershop.controller.dto.ItemAction;
+import ru.mdemidkin.intershop.controller.dto.ItemsSortedSearchPageDto;
 import ru.mdemidkin.intershop.controller.dto.Paging;
 import ru.mdemidkin.intershop.controller.dto.SortType;
 import ru.mdemidkin.intershop.model.CartItem;
 import ru.mdemidkin.intershop.model.Item;
 import ru.mdemidkin.intershop.repository.ItemRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,7 +29,7 @@ public class ItemService {
     private final CartService cartService;
 
     @Transactional(readOnly = true)
-    public List<List<Item>> findAll(String search, SortType sortType, int pageNumber, int pageSize) {
+    public ItemsSortedSearchPageDto searchItems(String search, SortType sortType, int pageNumber, int pageSize) {
         Sort sort = getSort(sortType);
         Pageable pageable = PageRequest.of(pageNumber - 1, pageSize, sort);
 
@@ -45,17 +47,22 @@ public class ItemService {
                 itemPage.hasPrevious()
         );
 
-        //todo
-        // 1. проставить count
-        // 2. преобразовать в List<List>
+        List<Item> itemList = itemPage.getContent();
+        itemList.forEach(this::setItemQuantity);
+        List<List<Item>> itemsTile = getItemsTile(itemList);
 
-        return null;
+        return new ItemsSortedSearchPageDto(
+                search,
+                sortType,
+                responsePaging,
+                itemsTile
+        );
     }
 
     @Transactional(readOnly = true)
     public Item getById(Long id) {
         Item item = itemRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-        cartService.findItemById(item.getId()).ifPresent(cartItem -> item.setCount(cartItem.getQuantity()));
+        setItemQuantity(item);
         return item;
     }
 
@@ -106,6 +113,31 @@ public class ItemService {
                 getTotal(itemsFromCart),
                 itemsFromCart.isEmpty()
         );
+    }
+
+    /**
+     * Группируем товары по три в ряд (для представления плиткой)
+     *
+     * @param items список товаров на странице
+     * @return плитку 3х3 товаров на странице
+     */
+    private List<List<Item>> getItemsTile(List<Item> items) {
+        List<List<Item>> rows = new ArrayList<>();
+        List<Item> currentRow = null;
+
+        for (int i = 0; i < items.size(); i++) {
+            if (i % 3 == 0) {
+                currentRow = new ArrayList<>();
+                rows.add(currentRow);
+            }
+            currentRow.add(items.get(i));
+        }
+        return rows;
+    }
+
+    private void setItemQuantity(Item item) {
+        cartService.findItemById(item.getId())
+                .ifPresent(cartItem -> item.setCount(cartItem.getQuantity()));
     }
 
     private Double getTotal(List<Item> items) {
