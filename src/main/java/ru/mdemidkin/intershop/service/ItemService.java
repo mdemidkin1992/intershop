@@ -72,7 +72,7 @@ public class ItemService {
         Optional<CartItem> optionalCartItem = cartService.findItemById(itemId);
 
         switch (action) {
-            case PLUS:
+            case plus:
                 if (optionalCartItem.isPresent()) {
                     CartItem cartItem = optionalCartItem.get();
                     cartItem.setQuantity(cartItem.getQuantity() + 1);
@@ -86,12 +86,12 @@ public class ItemService {
                 }
                 break;
 
-            case MINUS:
+            case minus:
                 if (optionalCartItem.isPresent()) {
                     CartItem cartItem = optionalCartItem.get();
                     Integer quantity = cartItem.getQuantity();
                     if (quantity > 1) {
-                        cartItem.setQuantity(quantity + 1);
+                        cartItem.setQuantity(quantity - 1);
                         cartService.saveOrUpdate(cartItem);
                     } else {
                         cartService.delete(cartItem);
@@ -99,7 +99,7 @@ public class ItemService {
                 }
                 break;
 
-            case DELETE:
+            case delete:
                 optionalCartItem.ifPresent(cartService::delete);
                 break;
         }

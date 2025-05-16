@@ -61,7 +61,7 @@ class StoreControllerIntegrationTest extends PostgresTestcontainersConfig {
     @SneakyThrows
     void modifyItemInCart_shouldUpdateCartAndRedirect() {
         mockMvc.perform(post("/main/items/1")
-                        .param("action", "PLUS"))
+                        .param("action", "plus"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/main/items"));
     }
@@ -82,17 +82,17 @@ class StoreControllerIntegrationTest extends PostgresTestcontainersConfig {
     @SneakyThrows
     void modifyCartItem_shouldUpdateCartAndRedirect() {
         mockMvc.perform(post("/cart/items/1")
-                        .param("action", "PLUS"))
+                        .param("action", "plus"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/cart/items"));
 
         mockMvc.perform(post("/cart/items/1")
-                        .param("action", "MINUS"))
+                        .param("action", "minus"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/cart/items"));
 
         mockMvc.perform(post("/cart/items/1")
-                        .param("action", "DELETE"))
+                        .param("action", "delete"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/cart/items"));
     }
@@ -111,7 +111,7 @@ class StoreControllerIntegrationTest extends PostgresTestcontainersConfig {
     @SneakyThrows
     void modifyItemFromCard_shouldUpdateCartAndRedirect() {
         mockMvc.perform(post("/items/1")
-                        .param("action", "PLUS"))
+                        .param("action", "plus"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/items/1"));
     }
@@ -120,7 +120,7 @@ class StoreControllerIntegrationTest extends PostgresTestcontainersConfig {
     @SneakyThrows
     void buyItems_shouldCreateOrderAndRedirect() {
         mockMvc.perform(post("/main/items/1")
-                .param("action", "PLUS"));
+                .param("action", "plus"));
 
         mockMvc.perform(post("/buy"))
                 .andExpect(status().is3xxRedirection())
@@ -141,7 +141,7 @@ class StoreControllerIntegrationTest extends PostgresTestcontainersConfig {
     @SneakyThrows
     void getOrder_shouldReturnHtmlWithOrder() {
         mockMvc.perform(post("/main/items/1")
-                .param("action", "PLUS"));
+                .param("action", "plus"));
 
         mockMvc.perform(post("/buy"));
 
@@ -159,7 +159,7 @@ class StoreControllerIntegrationTest extends PostgresTestcontainersConfig {
     @SneakyThrows
     void getOrder_withNewOrderParam_shouldShowCongratulations() {
         mockMvc.perform(post("/main/items/1")
-                .param("action", "PLUS"));
+                .param("action", "plus"));
 
         mockMvc.perform(post("/buy"));
 

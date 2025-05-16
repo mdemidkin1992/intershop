@@ -162,7 +162,7 @@ class ItemServiceUnitTest {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item1));
         when(cartService.findItemById(1L)).thenReturn(Optional.empty());
 
-        itemService.updateCartItem(1L, ItemAction.PLUS);
+        itemService.updateCartItem(1L, ItemAction.plus);
 
         verify(itemRepository).findById(1L);
         verify(cartService).findItemById(1L);
@@ -176,7 +176,7 @@ class ItemServiceUnitTest {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item1));
         when(cartService.findItemById(1L)).thenReturn(Optional.of(cartItem1));
 
-        itemService.updateCartItem(1L, ItemAction.PLUS);
+        itemService.updateCartItem(1L, ItemAction.plus);
 
         verify(cartService).saveOrUpdate(argThat(cartItem ->
                 cartItem.getQuantity() == 3
@@ -188,10 +188,10 @@ class ItemServiceUnitTest {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item1));
         when(cartService.findItemById(1L)).thenReturn(Optional.of(cartItem1));
 
-        itemService.updateCartItem(1L, ItemAction.MINUS);
+        itemService.updateCartItem(1L, ItemAction.minus);
 
         verify(cartService).saveOrUpdate(argThat(cartItem ->
-                cartItem.getQuantity() == 3
+                cartItem.getQuantity() == 1
         ));
     }
 
@@ -205,7 +205,7 @@ class ItemServiceUnitTest {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item1));
         when(cartService.findItemById(1L)).thenReturn(Optional.of(cartItemWithOneQuantity));
 
-        itemService.updateCartItem(1L, ItemAction.MINUS);
+        itemService.updateCartItem(1L, ItemAction.minus);
 
         verify(cartService).delete(cartItemWithOneQuantity);
     }
@@ -215,7 +215,7 @@ class ItemServiceUnitTest {
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item1));
         when(cartService.findItemById(1L)).thenReturn(Optional.of(cartItem1));
 
-        itemService.updateCartItem(1L, ItemAction.DELETE);
+        itemService.updateCartItem(1L, ItemAction.delete);
 
         verify(cartService).delete(cartItem1);
     }
