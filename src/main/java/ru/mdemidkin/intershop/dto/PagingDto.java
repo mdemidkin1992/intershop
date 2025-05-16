@@ -1,6 +1,6 @@
 package ru.mdemidkin.intershop.dto;
 
-public record Paging(
+public record PagingDto(
         int pageNumber,
         int pageSize,
         boolean hasNext,

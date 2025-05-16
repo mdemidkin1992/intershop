@@ -8,11 +8,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.mdemidkin.intershop.dto.CartItemListDto;
-import ru.mdemidkin.intershop.model.enums.ItemAction;
 import ru.mdemidkin.intershop.dto.ItemsSortedSearchPageDto;
-import ru.mdemidkin.intershop.model.enums.SortType;
 import ru.mdemidkin.intershop.model.Item;
 import ru.mdemidkin.intershop.model.Order;
+import ru.mdemidkin.intershop.model.enums.ItemAction;
+import ru.mdemidkin.intershop.model.enums.SortType;
 import ru.mdemidkin.intershop.service.ItemService;
 import ru.mdemidkin.intershop.service.OrderService;
 
@@ -40,7 +40,7 @@ public class StoreController {
         model.addAttribute("items", result.itemsTile());
         model.addAttribute("search", result.search());
         model.addAttribute("sort", result.sortType());
-        model.addAttribute("paging", result.responsePaging());
+        model.addAttribute("paging", result.responsePagingDto());
         return "main.html";
     }
 
