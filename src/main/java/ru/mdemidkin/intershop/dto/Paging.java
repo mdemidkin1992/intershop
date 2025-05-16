@@ -1,4 +1,4 @@
-package ru.mdemidkin.intershop.controller.dto;
+package ru.mdemidkin.intershop.dto;
 
 public record Paging(
         int pageNumber,

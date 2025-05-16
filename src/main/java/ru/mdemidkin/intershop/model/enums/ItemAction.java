@@ -1,4 +1,4 @@
-package ru.mdemidkin.intershop.controller.dto;
+package ru.mdemidkin.intershop.model.enums;
 
 public enum ItemAction {
     PLUS,
