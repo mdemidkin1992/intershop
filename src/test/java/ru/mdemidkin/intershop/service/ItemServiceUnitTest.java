@@ -37,7 +37,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ItemServiceTest {
+class ItemServiceUnitTest {
 
     @Mock
     private ItemRepository itemRepository;
@@ -96,7 +96,7 @@ class ItemServiceTest {
         assertEquals(3, result.itemsTile().get(0).size());
         assertEquals("Test Item 1", result.itemsTile().get(0).get(0).getTitle());
         assertEquals(SortType.NO, result.sortType());
-        assertEquals(1, result.responsePaging().pageNumber());
+        assertEquals(1, result.responsePagingDto().pageNumber());
         verify(itemRepository).findAll(any(Pageable.class));
         verify(cartService, times(3)).findItemById(anyLong());
     }

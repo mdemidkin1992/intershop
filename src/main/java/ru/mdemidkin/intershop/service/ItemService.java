@@ -9,12 +9,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.mdemidkin.intershop.dto.CartItemListDto;
-import ru.mdemidkin.intershop.model.enums.ItemAction;
 import ru.mdemidkin.intershop.dto.ItemsSortedSearchPageDto;
-import ru.mdemidkin.intershop.dto.Paging;
-import ru.mdemidkin.intershop.model.enums.SortType;
+import ru.mdemidkin.intershop.dto.PagingDto;
 import ru.mdemidkin.intershop.model.CartItem;
 import ru.mdemidkin.intershop.model.Item;
+import ru.mdemidkin.intershop.model.enums.ItemAction;
+import ru.mdemidkin.intershop.model.enums.SortType;
 import ru.mdemidkin.intershop.repository.ItemRepository;
 
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ public class ItemService {
             itemPage = itemRepository.findByTitleOrDescriptionContaining(search, pageable);
         }
 
-        Paging responsePaging = new Paging(
+        PagingDto responsePagingDto = new PagingDto(
                 pageNumber,
                 pageSize,
                 itemPage.hasNext(),
@@ -54,7 +54,7 @@ public class ItemService {
         return new ItemsSortedSearchPageDto(
                 search,
                 sortType,
-                responsePaging,
+                responsePagingDto,
                 itemsTile
         );
     }

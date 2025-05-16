@@ -12,9 +12,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-import java.math.BigDecimal;
-
+@ToString
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,6 +27,7 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "order_id")
     private Order order;

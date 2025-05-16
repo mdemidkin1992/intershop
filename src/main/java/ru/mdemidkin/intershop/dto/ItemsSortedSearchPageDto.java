@@ -8,7 +8,7 @@ import java.util.List;
 public record ItemsSortedSearchPageDto(
         String search,
         SortType sortType,
-        Paging responsePaging,
+        PagingDto responsePagingDto,
         List<List<Item>> itemsTile
 ) {
 }

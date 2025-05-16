@@ -33,11 +33,11 @@ public class OrderService {
 
     @Transactional
     public Order createOrder() {
+        double totalPrice = 0.0;
         List<Item> cartItems = itemService.getCartItemListDto().items();
         Order order = new Order();
         order.setCreatedAt(LocalDateTime.now());
-
-        double totalPrice = 0.0;
+        order.setTotalPrice(totalPrice);
 
         Order savedOrder = orderRepository.save(order);
 
