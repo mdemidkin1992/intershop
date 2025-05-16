@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.mdemidkin.intershop.config.PostgresTestcontainersConfig;
 import ru.mdemidkin.intershop.model.Order;
 import ru.mdemidkin.intershop.model.enums.SortType;
 import ru.mdemidkin.intershop.service.OrderService;
@@ -23,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class StoreControllerIntegrationTest {
+class StoreControllerIntegrationTest extends PostgresTestcontainersConfig {
 
     @Autowired
     private MockMvc mockMvc;

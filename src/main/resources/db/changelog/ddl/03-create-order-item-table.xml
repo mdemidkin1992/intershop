@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <changeSet id="03-create-order-items-table" author="Maxim Demidkin">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="order_items"/>
+            </not>
+        </preConditions>
+
+        <sql>
+            CREATE TABLE order_items
+            (
+                id             BIGSERIAL PRIMARY KEY,
+                order_id       BIGINT         NOT NULL REFERENCES orders (id),
+                item_id        BIGINT         NOT NULL REFERENCES items (id),
+                quantity       INT            NOT NULL,
+                price_per_item DECIMAL(10, 2) NOT NULL,
+                CONSTRAINT unique_order_item UNIQUE (order_id, item_id)
+            );
+        </sql>
+
+        <rollback>
+            DROP TABLE IF EXISTS order_items;
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

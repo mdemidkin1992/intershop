@@ -1,0 +1,36 @@
+@startuml
+
+!theme plain
+top to bottom direction
+skinparam linetype ortho
+
+class cart_items {
+   item_id: bigint
+   quantity: integer
+   id: bigint
+}
+class items {
+   title: varchar(255)
+   description: text
+   img_path: varchar(255)
+   price: numeric(10,2)
+   stock_count: integer
+   id: bigint
+}
+class order_items {
+   order_id: bigint
+   item_id: bigint
+   quantity: integer
+   price_per_item: numeric(10,2)
+   id: bigint
+}
+class orders {
+   created_at: timestamp
+   total_price: numeric(10,2)
+   id: bigint
+}
+
+cart_items             -[#595959,plain]-^  items                 : "item_id:id"
+order_items            -[#595959,plain]-^  items                 : "item_id:id"
+order_items            -[#595959,plain]-^  orders                : "order_id:id"
+@enduml

@@ -1,6 +1,0 @@
-CREATE TABLE orders
-(
-    id          BIGSERIAL PRIMARY KEY,
-    created_at  TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    total_price DECIMAL(10, 2) NOT NULL
-);
