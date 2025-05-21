@@ -1,0 +1,27 @@
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+
+# App
+spring:
+  application:
+    name: intershop
+
+  # Liquibase
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+    drop-first: true
+
+  # Datasource
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/intershop-db
+    username: postgres
+    password: postgres
