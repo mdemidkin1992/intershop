@@ -1,13 +1,14 @@
 package ru.mdemidkin.intershop.service;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.mdemidkin.intershop.dto.CartItemListDto;
 import ru.mdemidkin.intershop.dto.ItemsSortedSearchPageDto;
 import ru.mdemidkin.intershop.dto.PagingDto;
@@ -16,103 +17,99 @@ import ru.mdemidkin.intershop.model.Item;
 import ru.mdemidkin.intershop.model.enums.ItemAction;
 import ru.mdemidkin.intershop.model.enums.SortType;
 import ru.mdemidkin.intershop.repository.ItemRepository;
+import ru.mdemidkin.intershop.repository.ItemCustomRepository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
+import static org.springframework.data.relational.core.query.Criteria.empty;
+import static org.springframework.data.relational.core.query.Criteria.where;
+import static org.springframework.data.relational.core.query.Query.query;
 
 @Service
 @RequiredArgsConstructor
 public class ItemService {
 
+    private final R2dbcEntityTemplate template;
+
     private final ItemRepository itemRepository;
     private final CartService cartService;
+    private final ItemCustomRepository customRepository;
 
-    @Transactional(readOnly = true)
-    public ItemsSortedSearchPageDto searchItems(String search, SortType sortType, int pageNumber, int pageSize) {
-        Sort sort = getSort(sortType);
-        Pageable pageable = PageRequest.of(pageNumber - 1, pageSize, sort);
+    public Mono<ItemsSortedSearchPageDto> searchItems(String search, SortType sortType, int pageNumber, int pageSize) {
+        Mono<Long> totalCount = customRepository.getCountBySearch(search);
+        Flux<Item> itemFlux = customRepository.getItemsBySearch(search, sortType, pageNumber, pageSize)
+                .flatMap(this::setItemQuantity);
 
-        Page<Item> itemPage;
-        if (search == null || search.isBlank()) {
-            itemPage = itemRepository.findAll(pageable);
-        } else {
-            itemPage = itemRepository.findByTitleOrDescriptionContaining(search, pageable);
-        }
+        return itemFlux.collectList()
+                .zipWith(totalCount)
+                .map(tuple -> {
+                    List<Item> items = tuple.getT1();
+                    long total = tuple.getT2();
 
-        PagingDto responsePagingDto = new PagingDto(
-                pageNumber,
-                pageSize,
-                itemPage.hasNext(),
-                itemPage.hasPrevious()
-        );
+                    boolean hasNext = (long) pageNumber * pageSize < total;
+                    boolean hasPrevious = pageNumber > 1;
 
-        List<Item> itemList = itemPage.getContent();
-        itemList.forEach(this::setItemQuantity);
-        List<List<Item>> itemsTile = getItemsTile(itemList);
+                    PagingDto pagingDto = new PagingDto(pageNumber, pageSize, hasNext, hasPrevious);
+                    List<List<Item>> tiles = getItemsTile(items);
 
-        return new ItemsSortedSearchPageDto(
-                search,
-                sortType,
-                responsePagingDto,
-                itemsTile
-        );
+                    return new ItemsSortedSearchPageDto(search, sortType, pagingDto, tiles);
+                });
     }
 
-    @Transactional(readOnly = true)
-    public Item getById(Long id) {
-        Item item = itemRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-        setItemQuantity(item);
-        return item;
+    public Mono<Item> getById(Long id) {
+        return itemRepository.findById(id)
+                .flatMap(this::setItemQuantity);
     }
 
-    @Transactional
-    public void updateCartItem(Long itemId, ItemAction action) {
-        Item item = itemRepository.findById(itemId).orElseThrow(EntityNotFoundException::new);
-        Optional<CartItem> optionalCartItem = cartService.findItemById(itemId);
+    public Mono<CartItem> updateCartItem(Long itemId, ItemAction action) {
+        return cartService.findItemById(itemId)
+                .switchIfEmpty(createNewCartItem(itemId, action))
+                .flatMap(cartItem -> {
+                    switch (action) {
+                        case plus:
+                            cartItem.setQuantity(cartItem.getQuantity() + 1);
+                            return cartService.saveOrUpdate(cartItem);
 
-        switch (action) {
-            case plus:
-                if (optionalCartItem.isPresent()) {
-                    CartItem cartItem = optionalCartItem.get();
-                    cartItem.setQuantity(cartItem.getQuantity() + 1);
-                    cartService.saveOrUpdate(cartItem);
-                } else {
-                    CartItem cartItem = CartItem.builder()
-                            .item(item)
-                            .quantity(1)
-                            .build();
-                    cartService.saveOrUpdate(cartItem);
-                }
-                break;
+                        case minus:
+                            int quantity = cartItem.getQuantity();
+                            if (quantity > 1) {
+                                cartItem.setQuantity(quantity - 1);
+                                return cartService.saveOrUpdate(cartItem);
+                            } else {
+                                return cartService.delete(cartItem).then(Mono.empty());
+                            }
 
-            case minus:
-                if (optionalCartItem.isPresent()) {
-                    CartItem cartItem = optionalCartItem.get();
-                    Integer quantity = cartItem.getQuantity();
-                    if (quantity > 1) {
-                        cartItem.setQuantity(quantity - 1);
-                        cartService.saveOrUpdate(cartItem);
-                    } else {
-                        cartService.delete(cartItem);
+                        case delete:
+                            return cartService.delete(cartItem).then(Mono.empty());
+
+                        default:
+                            return Mono.empty();
                     }
-                }
-                break;
+                });
+    }
 
-            case delete:
-                optionalCartItem.ifPresent(cartService::delete);
-                break;
+    public Mono<List<Item>> getByOrderId(Long orderId) {
+        return customRepository.findItemsByOrderId(orderId).collectList();
+    }
+
+    private Mono<CartItem> createNewCartItem(Long itemId, ItemAction action) {
+        if (action.equals(ItemAction.plus)) {
+            return itemRepository.findById(itemId)
+                    .map(item -> {
+                        CartItem cartItem = new CartItem();
+                        cartItem.setItemId(itemId);
+                        cartItem.setQuantity(0);
+                        return cartItem;
+                    });
+        } else {
+            return Mono.empty();
         }
     }
 
-    @Transactional(readOnly = true)
-    public CartItemListDto getCartItemListDto() {
-        List<Item> itemsFromCart = getItemsFromCart();
-        return new CartItemListDto(
-                itemsFromCart,
-                getTotal(itemsFromCart),
-                itemsFromCart.isEmpty()
-        );
+    public Mono<CartItemListDto> getCartItemListDto() {
+        return getItemsFromCart().collectList()
+                .map(list -> new CartItemListDto(list, getTotal(list), list.isEmpty()));
     }
 
     /**
@@ -135,9 +132,10 @@ public class ItemService {
         return rows;
     }
 
-    private void setItemQuantity(Item item) {
-        cartService.findItemById(item.getId())
-                .ifPresent(cartItem -> item.setCount(cartItem.getQuantity()));
+    private Mono<Item> setItemQuantity(Item item) {
+        return cartService.findItemById(item.getId())
+                .doOnNext(cartItem -> item.setCount(cartItem.getQuantity()))
+                .thenReturn(item);
     }
 
     private Double getTotal(List<Item> items) {
@@ -146,24 +144,11 @@ public class ItemService {
                 .reduce(0.0, Double::sum);
     }
 
-    private List<Item> getItemsFromCart() {
-        List<CartItem> cartItems = cartService.getAll();
-        return cartItems.stream()
-                .map(cartItem -> {
-                    Item item = cartItem.getItem();
-                    item.setCount(cartItem.getQuantity());
-                    return item;
-                }).toList();
+    private Flux<Item> getItemsFromCart() {
+        return cartService.getAll()
+                .flatMap(cartItem ->
+                        getById(cartItem.getItemId())
+                                .doOnNext(item -> item.setCount(cartItem.getQuantity()))
+                );
     }
-
-    private Sort getSort(SortType sortType) {
-        Sort sort = Sort.unsorted();
-        if (sortType == SortType.ALPHA) {
-            sort = Sort.by("title").ascending();
-        } else if (sortType == SortType.PRICE) {
-            sort = Sort.by("price").ascending();
-        }
-        return sort;
-    }
-
 }

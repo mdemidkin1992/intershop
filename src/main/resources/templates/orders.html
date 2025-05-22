@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<meta charset="UTF-8">
+
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
@@ -16,15 +18,15 @@
     <tr th:each="order : ${orders}">
         <td>
             <h2>
-                <a th:text="${'Заказ №'+order.getId()}" th:href="${'/orders/'+order.getId()}"></a>
+                <a th:text="${'Заказ №'+order.id()}" th:href="${'/orders/'+order.id()}"></a>
             </h2>
             <table>
-                <tr th:each="item : ${order.getItems()}">
+                <tr th:each="item : ${order.items()}">
                     <td th:text="${item.getTitle()+' ('+item.getCount()+' шт.) '+(item.getPrice()*item.getCount())+' руб.'}"></td>
                 </tr>
             </table>
             <p>
-                <b th:text="${'Сумма: '+order.getTotalPrice()}+' руб.'"></b>
+                <b th:text="${'Сумма: '+order.totalPrice()}+' руб.'"></b>
             </p>
         </td>
     </tr>

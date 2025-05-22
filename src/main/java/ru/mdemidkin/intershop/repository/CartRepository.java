@@ -1,13 +1,12 @@
 package ru.mdemidkin.intershop.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Mono;
 import ru.mdemidkin.intershop.model.CartItem;
 
-import java.util.Optional;
-
 @Repository
-public interface CartRepository extends JpaRepository<CartItem, Long> {
+public interface CartRepository extends R2dbcRepository<CartItem, Long> {
 
-    Optional<CartItem> findByItemId(Long itemId);
+    Mono<CartItem> findByItemId(Long itemId);
 }
