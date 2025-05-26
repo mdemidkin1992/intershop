@@ -1,101 +1,74 @@
-//package ru.mdemidkin.intershop.service;
-//
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//import org.mockito.InjectMocks;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//import ru.mdemidkin.intershop.model.CartItem;
-//import ru.mdemidkin.intershop.repository.CartRepository;
-//
-//import java.util.Arrays;
-//import java.util.List;
-//import java.util.Optional;
-//
-//import static org.junit.jupiter.api.Assertions.assertEquals;
-//import static org.junit.jupiter.api.Assertions.assertFalse;
-//import static org.junit.jupiter.api.Assertions.assertTrue;
-//import static org.mockito.Mockito.verify;
-//import static org.mockito.Mockito.when;
-//
-//@ExtendWith(MockitoExtension.class)
-//public class CartServiceUnitTest {
-//
-//    @Mock
-//    private CartRepository cartItemRepository;
-//
-//    @InjectMocks
-//    private CartService cartService;
-//
-//    private CartItem testCartItem;
-//    private List<CartItem> testCartItems;
-//
-//    @BeforeEach
-//    void setUp() {
-//        testCartItem = new CartItem();
-//        testCartItem.setId(1L);
-//
-//        CartItem item1 = new CartItem();
-//        item1.setId(1L);
-//
-//        CartItem item2 = new CartItem();
-//        item2.setId(2L);
-//
-//        testCartItems = Arrays.asList(item1, item2);
-//    }
-//
-//    @Test
-//    void findItemById_existingItem_returnsItem() {
-//        when(cartItemRepository.findByItemId(1L)).thenReturn(Optional.of(testCartItem));
-//
-//        Optional<CartItem> result = cartService.findItemById(1L);
-//
-//        assertTrue(result.isPresent());
-//        assertEquals(1L, result.get().getId());
-//        verify(cartItemRepository).findByItemId(1L);
-//    }
-//
-//    @Test
-//    void findItemById_nonExistingItem_returnsEmptyOptional() {
-//        when(cartItemRepository.findByItemId(99L)).thenReturn(Optional.empty());
-//
-//        Optional<CartItem> result = cartService.findItemById(99L);
-//
-//        assertFalse(result.isPresent());
-//        verify(cartItemRepository).findByItemId(99L);
-//    }
-//
-//    @Test
-//    void saveOrUpdate_validItem_callsRepositorySave() {
-//        cartService.saveOrUpdate(testCartItem);
-//
-//        verify(cartItemRepository).save(testCartItem);
-//    }
-//
-//    @Test
-//    void delete_existingItem_callsRepositoryDelete() {
-//        cartService.delete(testCartItem);
-//
-//        verify(cartItemRepository).delete(testCartItem);
-//    }
-//
-//    @Test
-//    void getAll_returnsAllItems() {
-//        when(cartItemRepository.findAll()).thenReturn(testCartItems);
-//
-//        List<CartItem> result = cartService.getAll();
-//
-//        assertEquals(2, result.size());
-//        assertEquals(1L, result.get(0).getId());
-//        assertEquals(2L, result.get(1).getId());
-//        verify(cartItemRepository).findAll();
-//    }
-//
-//    @Test
-//    void clearCart_callsRepositoryDeleteAll() {
-//        cartService.clearCart();
-//
-//        verify(cartItemRepository).deleteAll();
-//    }
-//}
+package ru.mdemidkin.intershop.service;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import ru.mdemidkin.intershop.model.CartItem;
+import ru.mdemidkin.intershop.repository.CartRepository;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class CartServiceUnitTest {
+
+    @Mock
+    private CartRepository cartRepository;
+
+    @InjectMocks
+    private CartService cartService;
+
+    @Test
+    void findItemById_shouldReturnCartItem() {
+        CartItem item = CartItem.builder().id(1L).itemId(2L).quantity(3).build();
+        when(cartRepository.findByItemId(2L)).thenReturn(Mono.just(item));
+
+        cartService.findItemById(2L)
+                .doOnNext(found -> {
+                    assertEquals(2L, found.getItemId());
+                    assertEquals(3, found.getQuantity());
+                })
+                .block();
+    }
+
+    @Test
+    void saveOrUpdate_shouldSaveItem() {
+        CartItem item = CartItem.builder().itemId(2L).quantity(1).build();
+        when(cartRepository.save(item)).thenReturn(Mono.just(item));
+
+        CartItem saved = cartService.saveOrUpdate(item).block();
+        assertNotNull(saved);
+        assertEquals(2L, saved.getItemId());
+    }
+
+    @Test
+    void delete_shouldCompleteSuccessfully() {
+        CartItem item = CartItem.builder().id(1L).itemId(2L).build();
+        when(cartRepository.delete(item)).thenReturn(Mono.empty());
+
+        assertDoesNotThrow(() -> cartService.delete(item).block());
+    }
+
+    @Test
+    void getAll_shouldReturnAllItems() {
+        CartItem a = CartItem.builder().id(1L).itemId(2L).build();
+        CartItem b = CartItem.builder().id(2L).itemId(3L).build();
+        when(cartRepository.findAll()).thenReturn(Flux.just(a, b));
+
+        var list = cartService.getAll().collectList().block();
+        assertNotNull(list);
+        assertEquals(2, list.size());
+    }
+
+    @Test
+    void clearCart_shouldCompleteSuccessfully() {
+        when(cartRepository.deleteAll()).thenReturn(Mono.empty());
+        assertDoesNotThrow(() -> cartService.clearCart().block());
+    }
+}

@@ -3,15 +3,12 @@ package ru.mdemidkin.intershop.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import ru.mdemidkin.intershop.model.Order;
 import ru.mdemidkin.intershop.model.enums.ItemAction;
 import ru.mdemidkin.intershop.model.enums.SortType;
 import ru.mdemidkin.intershop.service.ItemService;
@@ -41,7 +38,7 @@ public class StoreController {
                     model.addAttribute("search", result.search());
                     model.addAttribute("sort", result.sortType());
                     model.addAttribute("paging", result.responsePagingDto());
-                    return "main.html";
+                    return "main";
                 });
     }
 
@@ -62,7 +59,7 @@ public class StoreController {
                     model.addAttribute("items", dto.items());
                     model.addAttribute("total", dto.cartTotal());
                     model.addAttribute("empty", dto.isCartEmpty());
-                    return "cart.html";
+                    return "cart";
                 });
     }
 
@@ -78,10 +75,10 @@ public class StoreController {
 
     @GetMapping("/items/{id}")
     public Mono<String> getItem(@PathVariable Long id, Model model) {
-        return itemService.getById(id)
+            return itemService.getById(id)
                 .map(item -> {
                     model.addAttribute("item", item);
-                    return "item.html";
+                    return "item";
                 });
     }
 
@@ -107,7 +104,7 @@ public class StoreController {
                 .collectList()
                 .map(orders -> {
                     model.addAttribute("orders", orders);
-                    return "orders.html";
+                    return "orders";
                 });
     }
 
@@ -119,7 +116,7 @@ public class StoreController {
                 .map(order -> {
                     model.addAttribute("order", order);
                     model.addAttribute("newOrder", newOrder);
-                    return "order.html";
+                    return "order";
                 });
     }
 }

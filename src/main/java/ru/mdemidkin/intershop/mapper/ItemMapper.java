@@ -1,12 +1,10 @@
 package ru.mdemidkin.intershop.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.mdemidkin.intershop.dto.ItemsSortedSearchPageDto;
-import ru.mdemidkin.intershop.dto.PagingDto;
 import ru.mdemidkin.intershop.model.Item;
+import ru.mdemidkin.intershop.model.OrderItem;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Map;
 
 @Component
@@ -24,16 +22,9 @@ public class ItemMapper {
                 .build();
     }
 
-//    public ItemsSortedSearchPageDto toDto(List<Item> items, long totalCount) {
-//        boolean hasNext = (long) pageNumber * pageSize < total;
-//        boolean hasPrevious = pageNumber > 1;
-//
-//        PagingDto pagingDto = new PagingDto(pageNumber, pageSize, hasNext, hasPrevious);
-//        List<List<Item>> tiles = getItemsTile(items);
-//
-//        return new ItemsSortedSearchPageDto(search, sortType, pagingDto, tiles);
-//
-//    }
-
+    public Item toItem(Item item, OrderItem orderItem) {
+        item.setCount(orderItem.getQuantity());
+        return item;
+    }
 
 }

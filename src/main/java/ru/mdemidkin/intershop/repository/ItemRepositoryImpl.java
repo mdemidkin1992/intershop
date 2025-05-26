@@ -6,12 +6,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Criteria;
-import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.mdemidkin.intershop.mapper.ItemMapper;
 import ru.mdemidkin.intershop.model.Item;
+import ru.mdemidkin.intershop.model.OrderItem;
 import ru.mdemidkin.intershop.model.enums.SortType;
 
 import static org.springframework.data.relational.core.query.Criteria.empty;
@@ -20,35 +20,31 @@ import static org.springframework.data.relational.core.query.Query.query;
 
 @Repository
 @RequiredArgsConstructor
-public class ItemCustomRepository {
+public class ItemRepositoryImpl implements ICustomItemRepository {
 
-    private final DatabaseClient client;
     private final ItemMapper mapper;
     private final R2dbcEntityTemplate template;
 
+    @Override
     public Flux<Item> findItemsByOrderId(Long orderId) {
-        String sql = """
-            SELECT i.id, i.title, i.description, i.img_path, i.price, i.stock_count,
-                   oi.quantity as count, oi.price_per_item
-            FROM items i
-            INNER JOIN order_items oi ON i.id = oi.item_id
-            WHERE oi.order_id = :orderId
-            ORDER BY i.id
-            """;
-
-        return client.sql(sql)
-                .bind("orderId", orderId)
-                .fetch()
+        return template.select(OrderItem.class)
+                .matching(query(where("order_id").is(orderId)))
                 .all()
-                .map(mapper::toItem);
+                .flatMap(orderItem -> template.select(Item.class)
+                        .matching(query(Criteria.where("id").is(orderItem.getItemId())))
+                        .one()
+                        .map(item -> mapper.toItem(item, orderItem))
+                );
     }
 
+    @Override
     public Mono<Long> getCountBySearch(String search) {
         Criteria criteria = searchCriteria(search);
         return template.count(query(criteria), Item.class);
     }
 
-    public Flux<Item> getItemsBySearch(String search, SortType sortType, int pageNumber, int pageSize){
+    @Override
+    public Flux<Item> getItemsBySearch(String search, SortType sortType, int pageNumber, int pageSize) {
         Sort sort = getSort(sortType);
         Pageable pageable = PageRequest.of(pageNumber - 1, pageSize, sort);
         Criteria criteria = searchCriteria(search);
@@ -57,7 +53,7 @@ public class ItemCustomRepository {
                 .all();
     }
 
-    private Criteria searchCriteria(String search){
+    private Criteria searchCriteria(String search) {
         return (search == null || search.isBlank())
                 ? empty()
                 : where("title").like("%" + search.toLowerCase() + "%")
@@ -65,13 +61,12 @@ public class ItemCustomRepository {
     }
 
     private Sort getSort(SortType sortType) {
-        Sort sort = Sort.unsorted();
         if (sortType == SortType.ALPHA) {
-            sort = Sort.by("title").ascending();
+            return Sort.by("title").ascending();
         } else if (sortType == SortType.PRICE) {
-            sort = Sort.by("price").ascending();
+            return Sort.by("price").ascending();
         }
-        return sort;
+        return Sort.by("title").ascending();
     }
 
 }

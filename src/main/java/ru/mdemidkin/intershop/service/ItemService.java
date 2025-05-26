@@ -1,11 +1,6 @@
 package ru.mdemidkin.intershop.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
-import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -17,28 +12,20 @@ import ru.mdemidkin.intershop.model.Item;
 import ru.mdemidkin.intershop.model.enums.ItemAction;
 import ru.mdemidkin.intershop.model.enums.SortType;
 import ru.mdemidkin.intershop.repository.ItemRepository;
-import ru.mdemidkin.intershop.repository.ItemCustomRepository;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.springframework.data.relational.core.query.Criteria.empty;
-import static org.springframework.data.relational.core.query.Criteria.where;
-import static org.springframework.data.relational.core.query.Query.query;
 
 @Service
 @RequiredArgsConstructor
 public class ItemService {
 
-    private final R2dbcEntityTemplate template;
-
     private final ItemRepository itemRepository;
     private final CartService cartService;
-    private final ItemCustomRepository customRepository;
 
     public Mono<ItemsSortedSearchPageDto> searchItems(String search, SortType sortType, int pageNumber, int pageSize) {
-        Mono<Long> totalCount = customRepository.getCountBySearch(search);
-        Flux<Item> itemFlux = customRepository.getItemsBySearch(search, sortType, pageNumber, pageSize)
+        Mono<Long> totalCount = itemRepository.getCountBySearch(search);
+        Flux<Item> itemFlux = itemRepository.getItemsBySearch(search, sortType, pageNumber, pageSize)
                 .flatMap(this::setItemQuantity);
 
         return itemFlux.collectList()
@@ -90,7 +77,7 @@ public class ItemService {
     }
 
     public Mono<List<Item>> getByOrderId(Long orderId) {
-        return customRepository.findItemsByOrderId(orderId).collectList();
+        return itemRepository.findItemsByOrderId(orderId).collectList();
     }
 
     private Mono<CartItem> createNewCartItem(Long itemId, ItemAction action) {
