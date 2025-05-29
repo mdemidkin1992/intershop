@@ -2,12 +2,10 @@ package ru.mdemidkin.intershop.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.mdemidkin.intershop.model.CartItem;
 import ru.mdemidkin.intershop.repository.CartRepository;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -15,30 +13,24 @@ public class CartService {
 
     private final CartRepository cartItemRepository;
 
-    @Transactional(readOnly = true)
-    public Optional<CartItem> findItemById(Long itemId) {
+    public Mono<CartItem> findItemById(Long itemId) {
         return cartItemRepository.findByItemId(itemId);
     }
 
-    @Transactional
-    public void saveOrUpdate(CartItem cartItem) {
-        cartItemRepository.save(cartItem);
+    public Mono<CartItem> saveOrUpdate(CartItem cartItem) {
+        return cartItemRepository.save(cartItem);
     }
 
-    @Transactional
-    public void delete(CartItem cartItem) {
-        cartItemRepository.delete(cartItem);
+    public Mono<Void> delete(CartItem cartItem) {
+        return cartItemRepository.delete(cartItem);
     }
 
-    @Transactional(readOnly = true)
-    public List<CartItem> getAll() {
+    public Flux<CartItem> getAll() {
         return cartItemRepository.findAll();
     }
 
-    @Transactional
-    public void clearCart() {
-        cartItemRepository.deleteAll();
+    public Mono<Void> clearCart() {
+        return cartItemRepository.deleteAll();
     }
-
 
 }

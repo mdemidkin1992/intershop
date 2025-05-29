@@ -12,6 +12,8 @@ management:
 spring:
   application:
     name: intershop
+  main:
+    allow-bean-definition-overriding: true # убрать после dev
 
   # Liquibase
   liquibase:
@@ -19,9 +21,17 @@ spring:
     enabled: true
     drop-first: true
 
-  # Datasource
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/intershop-db
+  thymeleaf:
+    encoding: UTF-8
+    mode: HTML
+
+  # Datasource (reactive)
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/intershop-db
     username: postgres
     password: postgres
+
+logging:
+  level:
+    sql: debug
+    web: trace

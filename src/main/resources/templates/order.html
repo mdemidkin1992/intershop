@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<meta charset="UTF-8">
+
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
@@ -19,10 +21,10 @@
 <table style="width:70%;margin-left:auto;margin-right:auto;">
     <tr>
         <td>
-            <h2 th:text="${'Заказ №'+order.getId()}"></h2>
+            <h2 th:text="${'Заказ №'+order.id()}"></h2>
         </td>
     </tr>
-    <tr th:each="item : ${order.getItems()}">
+    <tr th:each="item : ${order.items()}">
         <td>
             <table>
                 <tr>
@@ -48,7 +50,7 @@
     </tr>
     <tr>
         <td>
-            <h3 th:text="${'Сумма: '+order.getTotalPrice()}+' руб.'"></h3>
+            <h3 th:text="${'Сумма: '+order.totalPrice()}+' руб.'"></h3>
         </td>
     </tr>
 </table>
