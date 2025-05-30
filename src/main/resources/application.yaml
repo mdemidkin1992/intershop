@@ -31,6 +31,18 @@ spring:
     username: postgres
     password: postgres
 
+  # Cache
+  cache:
+    type: redis
+    redis:
+      time-to-live: 60000 # 1 минута
+
+  # Redis
+  data:
+    redis:
+      host: redis
+      port: 6379
+
 logging:
   level:
     sql: debug

@@ -1,0 +1,151 @@
+openapi: 3.0.3
+info:
+  title: Auto Workshop Management API
+  description: API для управления заказами и клиентами автомастерской
+  version: 1.0.0
+paths:
+  /api/orders:
+    get:
+      summary: Получить список заказов
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+    post:
+      summary: Создать новый заказ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '201':
+          description: Заказ успешно создан
+  /api/orders/{id}:
+    get:
+      summary: Получить информацию о заказе по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+    put:
+      summary: Обновить информацию о заказе
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '200':
+          description: Заказ успешно обновлен
+    delete:
+      summary: Удалить заказ
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Заказ успешно удален
+  /api/customers:
+    get:
+      summary: Получить список клиентов
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+    post:
+      summary: Создать нового клиента
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Customer'
+      responses:
+        '201':
+          description: Клиент успешно создан
+  /api/customers/{id}:
+    get:
+      summary: Получить информацию о клиенте по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+components:
+  schemas:
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        carModel:
+          type: string
+          example: Toyota Camry
+        serviceType:
+          type: string
+          example: Oil Change
+        status:
+          type: string
+          example: Pending
+        price:
+          type: number
+          format: double
+          example: 150.00
+        customerId:
+          type: integer
+          example: 101
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 101
+        name:
+          type: string
+          example: Иван Иванов
+        phone:
+          type: string
+          example: "+79990123456"
+        email:
+          type: string
+          example: ivan.ivanov@ya.ru

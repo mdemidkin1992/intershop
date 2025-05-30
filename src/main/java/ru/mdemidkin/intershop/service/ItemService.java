@@ -1,6 +1,8 @@
 package ru.mdemidkin.intershop.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -23,6 +25,7 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final CartService cartService;
 
+    @Cacheable(cacheNames = "searchItems", key = "{#search, #sortType, #pageNumber, #pageSize}")
     public Mono<ItemsSortedSearchPageDto> searchItems(String search, SortType sortType, int pageNumber, int pageSize) {
         Mono<Long> totalCount = itemRepository.getCountBySearch(search);
         Flux<Item> itemFlux = itemRepository.getItemsBySearch(search, sortType, pageNumber, pageSize)
@@ -44,11 +47,13 @@ public class ItemService {
                 });
     }
 
+    @Cacheable(cacheNames = "item", key = "#id")
     public Mono<Item> getById(Long id) {
         return itemRepository.findById(id)
                 .flatMap(this::setItemQuantity);
     }
 
+    @CacheEvict(cacheNames = "cartItems", allEntries = true)
     public Mono<CartItem> updateCartItem(Long itemId, ItemAction action) {
         return cartService.findItemById(itemId)
                 .switchIfEmpty(createNewCartItem(itemId, action))
@@ -94,6 +99,7 @@ public class ItemService {
         }
     }
 
+    @Cacheable(cacheNames = "cartItems")
     public Mono<CartItemListDto> getCartItemListDto() {
         return getItemsFromCart().collectList()
                 .map(list -> new CartItemListDto(list, getTotal(list), list.isEmpty()));

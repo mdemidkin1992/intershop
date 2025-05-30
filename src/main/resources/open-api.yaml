@@ -1,0 +1,140 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.example.com/v1
+    description: Основной сервер для работы с API
+  - url: http://localhost:{port}/{environment}
+    description: Локальный сервер разработки
+    variables:
+      port:
+        default: 8080
+      environment:
+        default: development
+        enum:
+          - development
+          - testing
+
+
+components:
+  # параметры / пути запроса
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      description: ID пользователя
+      required: true
+      schema:
+        type: integer
+    BookId:
+      name: bookId
+      in: path
+      description: Идентификатор книги
+      required: true
+      schema:
+        type: integer
+
+  # модели данных запросов / ответов
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Идентификатор пользователя
+        name:
+          type: string
+          description: Имя пользователя
+        role:
+          type: string
+          enum:
+            - admin
+            - user
+            - guest
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        year:
+          type: integer
+
+  # шаблоны ответов
+  responses:
+    '200':
+      description: Успешный ответ
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              email:
+                type: string
+    '404':
+      description: Пользователь не найден
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+      '5XX':
+        description: Внутренняя ошибка сервера
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+
+
+    SuccessResponse:
+      description: Успешный ответ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+
+  # примеры ответов
+  examples:
+    UserExample:
+      summary: Пример пользователя
+      description: ...
+      value:
+        id: 1
+        name: "Пользователь 1"
+
+  # тело запроса
+  requestBodies:
+    CreateUser:
+      description: Данные для создания нового пользователя
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+
+paths:
+  /books/{bookId}:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/BookId'
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        404:
+          description: Книга не найдена
+
+

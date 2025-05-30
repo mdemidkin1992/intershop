@@ -1,6 +1,9 @@
 package ru.mdemidkin.intershop.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -27,18 +30,23 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final OrderMapper mapper;
 
+    @Cacheable(cacheNames = "orders")
     public Flux<OrderDto> findAll() {
         return orderRepository.findAll()
                 .flatMap(order -> itemService.getByOrderId(order.getId())
                         .map(items -> mapper.toDto(order, items)));
     }
 
+    @Cacheable(cacheNames = "order", key = "#id")
     public Mono<OrderDto> findById(Long id) {
         return Mono.zip(orderRepository.findById(id),
                         itemService.getByOrderId(id))
                 .map(t -> mapper.toDto(t.getT1(), t.getT2()));
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = {"cartItems"}, allEntries = true),
+            @CacheEvict(cacheNames = {"searchItems"}, allEntries = true)})
     public Mono<Order> createOrder() {
         return itemService.getCartItemListDto()
                 .map(CartItemListDto::items)
