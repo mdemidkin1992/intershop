@@ -18,22 +18,36 @@ services:
     networks:
       - app_network
 
-  app:
-    image: service-app:latest
+  client-app:
+    image: client-service-app:latest
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: client/Dockerfile
     ports:
       - "8080:8080"
     environment:
       SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/intershop-db
       SPRING_R2DBC_USERNAME: postgres
       SPRING_R2DBC_PASSWORD: postgres
+      SPRING_DATA_REDIS_HOST: redis
+      PAYMENT_APP_HOST: server-app
     networks:
       - app_network
     depends_on:
       - postgres
       - redis
+
+  server-app:
+    image: server-service-app:latest
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "8081:8081"
+    networks:
+      - app_network
+    depends_on:
+      - client-app
 
 networks:
   app_network:
