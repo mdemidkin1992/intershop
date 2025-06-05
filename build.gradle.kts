@@ -15,3 +15,12 @@ allprojects {
         mavenCentral()
     }
 }
+
+tasks.register("test") {
+    dependsOn(subprojects.map { "${it.path}:test" })
+    doLast {
+        subprojects.forEach { project ->
+            println("${project.name}: file://$projectDir/${project.name}/build/reports/tests/test/index.html")
+        }
+    }
+}

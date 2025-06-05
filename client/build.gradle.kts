@@ -73,3 +73,7 @@ sourceSets["main"].java.srcDir("$projectDir/build/generated/src/main/java")
 tasks.compileJava {
     dependsOn("buildClient")
 }
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}

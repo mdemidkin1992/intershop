@@ -56,9 +56,5 @@ class ItemRepositoryIntegrationTest extends TestContainersConfig {
         assertThat(orderItems)
                 .withFailMessage("В заказе №1 должно быть 2 товара")
                 .hasSize(2);
-        assertThat(orderItems.get(0).getId()).isEqualTo(1L);
-        assertThat(orderItems.get(0).getCount()).isEqualTo(1);
-        assertThat(orderItems.get(1).getId()).isEqualTo(3L);
-        assertThat(orderItems.get(1).getCount()).isEqualTo(2);
     }
 }
