@@ -1,0 +1,304 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API
+  description: Реактивный RESTful API сервиса платежей для обработки балансов пользователей и осуществления платежей.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+
+tags:
+  - name: payments
+    description: Операции с платежами и балансами
+  - name: health
+    description: Проверка состояния сервиса
+
+paths:
+  /payments/balance/{userId}:
+    get:
+      tags:
+        - payments
+      summary: Получить баланс пользователя
+      description: |
+        Возвращает текущий баланс пользователя. Если пользователь не существует в системе,
+        генерирует случайный баланс от 0 до 3000 рублей и сохраняет его.
+      operationId: getBalance
+      parameters:
+        - name: userId
+          in: path
+          description: Уникальный идентификатор пользователя
+          required: true
+          schema:
+            type: string
+            example: "user1"
+            minLength: 1
+            maxLength: 50
+            pattern: '^[a-zA-Z0-9_-]+$'
+      responses:
+        '200':
+          description: Баланс успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+              examples:
+                success:
+                  summary: Успешный ответ
+                  value:
+                    userId: "user1"
+                    balance: 1500.00
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_user_id:
+                  summary: Некорректный ID пользователя
+                  value:
+                    error: "VALIDATION_ERROR"
+                    message: "Invalid user ID format"
+                    timestamp: 1672531200000
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internal_error:
+                  summary: Внутренняя ошибка
+                  value:
+                    error: "INTERNAL_ERROR"
+                    message: "An unexpected error occurred"
+                    timestamp: 1672531200000
+
+  /payments/pay:
+    post:
+      tags:
+        - payments
+      summary: Осуществить платеж
+      description: |
+        Обрабатывает платеж пользователя. Проверяет достаточность средств на балансе
+        и списывает указанную сумму при успешном выполнении операции.
+      operationId: processPayment
+      requestBody:
+        description: Данные для обработки платежа
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+            examples:
+              successful_payment:
+                summary: Успешный платеж
+                value:
+                  userId: "user1"
+                  amount: 150.50
+                  description: "Order payment for items"
+              large_payment:
+                summary: Крупный платеж
+                value:
+                  userId: "user2"
+                  amount: 2000.00
+                  description: "Premium subscription payment"
+      responses:
+        '200':
+          description: Платеж успешно обработан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+              examples:
+                success:
+                  summary: Успешный платеж
+                  value:
+                    userId: "user1"
+                    amount: 150.50
+                    remainingBalance: 1349.50
+                    status: "SUCCESS"
+                    message: "Payment processed successfully"
+        '400':
+          description: Ошибка обработки платежа
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+              examples:
+                insufficient_funds:
+                  summary: Недостаточно средств
+                  value:
+                    userId: "user3"
+                    amount: 1000.00
+                    remainingBalance: 500.75
+                    status: "FAILED"
+                    message: "Insufficient funds"
+                user_not_found:
+                  summary: Пользователь не найден
+                  value:
+                    userId: "unknown_user"
+                    amount: 100.00
+                    remainingBalance: 0.00
+                    status: "FAILED"
+                    message: "User not found"
+                validation_error:
+                  summary: Ошибка валидации
+                  value:
+                    error: "VALIDATION_ERROR"
+                    message: "amount: Amount must be positive"
+                    timestamp: 1672531200000
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payments/health:
+    get:
+      tags:
+        - health
+      summary: Проверка состояния сервиса
+      description: Возвращает статус работоспособности сервиса платежей
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Сервис работает нормально
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Payment Service is running"
+        '503':
+          description: Сервис недоступен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    PaymentRequest:
+      type: object
+      required:
+        - userId
+        - amount
+      properties:
+        userId:
+          type: string
+          description: Уникальный идентификатор пользователя
+          example: "user1"
+          minLength: 1
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_-]+$'
+        amount:
+          type: number
+          format: decimal
+          description: Сумма платежа (должна быть положительной)
+          example: 150.50
+          minimum: 0.01
+          maximum: 999999.99
+          multipleOf: 0.01
+        description:
+          type: string
+          description: Описание платежа (необязательное поле)
+          example: "Order payment for items"
+          maxLength: 255
+      example:
+        userId: "user1"
+        amount: 150.50
+        description: "Order payment for items"
+
+    BalanceResponse:
+      type: object
+      required:
+        - userId
+        - balance
+      properties:
+        userId:
+          type: string
+          description: Уникальный идентификатор пользователя
+          example: "user1"
+        balance:
+          type: number
+          format: decimal
+          description: Текущий баланс пользователя
+          example: 1500.00
+          minimum: 0
+      example:
+        userId: "user1"
+        balance: 1500.00
+
+    PaymentResponse:
+      type: object
+      required:
+        - userId
+        - amount
+        - remainingBalance
+        - status
+        - message
+      properties:
+        userId:
+          type: string
+          description: Уникальный идентификатор пользователя
+          example: "user1"
+        amount:
+          type: number
+          format: decimal
+          description: Сумма обработанного платежа
+          example: 150.50
+        remainingBalance:
+          type: number
+          format: decimal
+          description: Остаток средств на балансе после операции
+          example: 1349.50
+          minimum: 0
+        status:
+          type: string
+          description: Статус обработки платежа
+          enum:
+            - SUCCESS
+            - FAILED
+          example: "SUCCESS"
+        message:
+          type: string
+          description: Сообщение о результате операции
+          example: "Payment processed successfully"
+      example:
+        userId: "user1"
+        amount: 150.50
+        remainingBalance: 1349.50
+        status: "SUCCESS"
+        message: "Payment processed successfully"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Код ошибки
+          example: "VALIDATION_ERROR"
+          enum:
+            - VALIDATION_ERROR
+            - INTERNAL_ERROR
+            - USER_NOT_FOUND
+            - INSUFFICIENT_FUNDS
+        message:
+          type: string
+          description: Подробное описание ошибки
+          example: "amount: Amount must be positive"
+        timestamp:
+          type: integer
+          format: int64
+          description: Время возникновения ошибки (Unix timestamp)
+          example: 1672531200000
+      example:
+        error: "VALIDATION_ERROR"
+        message: "amount: Amount must be positive"
+        timestamp: 1672531200000
