@@ -1,4 +1,4 @@
-version: '3'
+version: '3.4'
 services:
   postgres:
     image: postgres:16.1-alpine
@@ -31,11 +31,18 @@ services:
       SPRING_R2DBC_PASSWORD: postgres
       SPRING_DATA_REDIS_HOST: redis
       PAYMENT_APP_HOST: server-app
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATION_URI: http://keycloak:8080/realms/intershop/protocol/openid-connect/auth
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI: http://keycloak:8080/realms/intershop/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/intershop/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_ID: intershop-client
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_SECRET: xODGIdLaADbA3jcBBa4HV1pa2MAeDxMQ
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_PROVIDER: keycloak
     networks:
       - app_network
     depends_on:
       - postgres
       - redis
+      - keycloak
 
   server-app:
     image: server-service-app:latest
@@ -44,10 +51,28 @@ services:
       dockerfile: server/Dockerfile
     ports:
       - "8081:8081"
+    environment:
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/intershop/protocol/openid-connect/certs
     networks:
       - app_network
     depends_on:
       - client-app
+      - keycloak
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.3
+    environment:
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./realm-export.json:/opt/keycloak/data/import/realm-export.json
+    command: start-dev --import-realm
+    networks:
+      - app_network
 
 networks:
   app_network:
