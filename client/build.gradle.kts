@@ -45,6 +45,7 @@ dependencies {
     testImplementation("org.testcontainers:r2dbc")
     testImplementation("com.github.codemonstur:embedded-redis:1.4.3")
     testImplementation("com.redis:testcontainers-redis:2.2.2")
+    testImplementation("org.springframework.security:spring-security-test")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testCompileOnly("org.projectlombok:lombok")

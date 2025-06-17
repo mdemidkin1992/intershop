@@ -1,6 +1,7 @@
 package ru.mdemidkin.client.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -37,8 +38,14 @@ public class StoreController {
                                  @RequestParam(defaultValue = "NO") SortType sort,
                                  @RequestParam(defaultValue = "1") int pageNumber,
                                  @RequestParam(defaultValue = "10") int pageSize,
-                                 Model model) {
-        return itemService.searchItems(search, sort, pageNumber, pageSize)
+                                 Model model,
+                                 Principal principal) {
+
+        String username = principal != null
+                ? principal.getName()
+                : StringUtils.EMPTY;
+
+        return itemService.searchItems(search, sort, pageNumber, pageSize, username)
                 .map(result -> {
                     model.addAttribute("items", result.itemsTile());
                     model.addAttribute("search", result.search());
@@ -53,20 +60,19 @@ public class StoreController {
     public Mono<String> modifyItemInCart(@PathVariable Long id,
                                          ServerWebExchange exchange,
                                          Principal principal) {
-        // todo поиск по username
-        // String name = principal.getName();
+        String username = principal.getName();
         return exchange.getFormData()
                 .map(data -> data.getFirst("action"))
                 .map(ItemAction::valueOf)
-                .flatMap(action -> itemService.updateCartItem(id, action))
+                .flatMap(action -> itemService.updateCartItem(id, action, username))
                 .then(Mono.just("redirect:/main/items"));
     }
 
     @GetMapping("/cart/items")
     @PreAuthorize("isAuthenticated() and hasAuthority('USER')")
     public Mono<String> getCartItems(Model model, Principal principal) {
-        // todo поиск по username
-        return itemService.getCartItemListDto()
+        String username = principal.getName();
+        return itemService.getCartItemListDto(username)
                 .map(dto -> {
                     model.addAttribute("items", dto.items());
                     model.addAttribute("total", dto.cartTotal());
@@ -80,17 +86,23 @@ public class StoreController {
     public Mono<String> modifyCartItem(@PathVariable Long id,
                                        ServerWebExchange exchange,
                                        Principal principal) {
-        // todo поиск по username
+        String username = principal.getName();
         return exchange.getFormData()
                 .map(data -> data.getFirst("action"))
                 .map(ItemAction::valueOf)
-                .flatMap(action -> itemService.updateCartItem(id, action))
+                .flatMap(action -> itemService.updateCartItem(id, action, username))
                 .then(Mono.just("redirect:/cart/items"));
     }
 
     @GetMapping("/items/{id}")
-    public Mono<String> getItem(@PathVariable Long id, Model model) {
-        return itemService.getById(id)
+    public Mono<String> getItem(@PathVariable Long id,
+                                Model model,
+                                Principal principal) {
+        String username = principal != null
+                ? principal.getName()
+                : StringUtils.EMPTY;
+
+        return itemService.getById(id, username)
                 .map(item -> {
                     model.addAttribute("item", item);
                     return "item";
@@ -102,26 +114,26 @@ public class StoreController {
     public Mono<String> modifyItemFromCard(@PathVariable Long id,
                                            ServerWebExchange exchange,
                                            Principal principal) {
-        // todo поиск по username
+        String username = principal.getName();
         return exchange.getFormData()
                 .map(data -> data.getFirst("action"))
                 .map(ItemAction::valueOf)
-                .flatMap(action -> itemService.updateCartItem(id, action))
+                .flatMap(action -> itemService.updateCartItem(id, action, username))
                 .then(Mono.just("redirect:/items/" + id));
     }
 
     @PostMapping("/buy")
     @PreAuthorize("isAuthenticated() and hasAuthority('USER')")
     public Mono<String> buyItems(Model model, Principal principal) {
-        // todo поиск по username
-        return itemService.getCartItemListDto()
+        String username = principal.getName();
+        return itemService.getCartItemListDto(username)
                 .map(CartItemListDto::items)
                 .flatMap(items -> {
                     double totalPrice = orderService.calculateTotalPrice(items);
-                    return paymentService.processOrderPayment(totalPrice)
+                    return paymentService.processOrderPayment(totalPrice, username)
                             .flatMap(paymentSuccess -> {
                                 if (paymentSuccess) {
-                                    return orderService.createOrder()
+                                    return orderService.createOrder(username)
                                             .map(order -> "redirect:/orders/" + order.getId() + "?newOrder=true");
                                 } else {
                                     model.addAttribute("error", "Не достаточно средств");
@@ -134,8 +146,8 @@ public class StoreController {
     @GetMapping("/orders")
     @PreAuthorize("isAuthenticated() and hasAuthority('USER')")
     public Mono<String> getOrders(Model model, Principal principal) {
-        // todo поиск по username
-        return orderService.findAll()
+        String userName = principal.getName();
+        return orderService.findAll(userName)
                 .collectList()
                 .map(orders -> {
                     model.addAttribute("orders", orders);
@@ -147,9 +159,7 @@ public class StoreController {
     @PreAuthorize("isAuthenticated() and hasAuthority('USER')")
     public Mono<String> getOrder(@PathVariable Long id,
                                  @RequestParam(defaultValue = "false") boolean newOrder,
-                                 Model model,
-                                 Principal principal) {
-        // todo поиск по username
+                                 Model model) {
         return orderService.findById(id)
                 .map(order -> {
                     model.addAttribute("order", order);

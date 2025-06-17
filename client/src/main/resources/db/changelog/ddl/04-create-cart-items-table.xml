@@ -18,7 +18,8 @@
                 id       BIGSERIAL PRIMARY KEY,
                 item_id  BIGINT NOT NULL REFERENCES items (id),
                 quantity INT    NOT NULL,
-                CONSTRAINT unique_cart_item UNIQUE (item_id)
+                user_id  BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                CONSTRAINT unique_cart_item UNIQUE (item_id, user_id)
             );
         </sql>
 
