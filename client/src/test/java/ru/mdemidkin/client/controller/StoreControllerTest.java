@@ -1,10 +1,13 @@
 package ru.mdemidkin.client.controller;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -31,7 +34,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@WebFluxTest(controllers = StoreController.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 class StoreControllerTest {
 
     @Autowired
@@ -56,7 +60,7 @@ class StoreControllerTest {
     }
 
     @Test
-    void shouldGetItems() {
+    void shouldGetItemsWithAnonymousUser() {
         Item item = createTestItem(1L, "Test Item", 10.0);
         PagingDto pagingDto = new PagingDto(1, 1, true, false);
         ItemsSortedSearchPageDto searchResult = new ItemsSortedSearchPageDto(
@@ -65,7 +69,28 @@ class StoreControllerTest {
                 pagingDto,
                 List.of(List.of(item)));
 
-        when(itemService.searchItems(anyString(), any(SortType.class), anyInt(), anyInt()))
+        when(itemService.searchItems(anyString(), any(SortType.class), anyInt(), anyInt(), eq(StringUtils.EMPTY)))
+                .thenReturn(Mono.just(searchResult));
+
+        webTestClient.get()
+                .uri("/main/items?search=test&sort=NO&pageNumber=1&pageSize=10")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class);
+    }
+
+    @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
+    void shouldGetItemsWithAuthorizedUser() {
+        Item item = createTestItem(1L, "Test Item", 10.0);
+        PagingDto pagingDto = new PagingDto(1, 1, true, false);
+        ItemsSortedSearchPageDto searchResult = new ItemsSortedSearchPageDto(
+                "test",
+                SortType.NO,
+                pagingDto,
+                List.of(List.of(item)));
+
+        when(itemService.searchItems(anyString(), any(SortType.class), anyInt(), anyInt(), eq("testuser")))
                 .thenReturn(Mono.just(searchResult));
 
         webTestClient.get()
@@ -85,7 +110,7 @@ class StoreControllerTest {
                 pagingDto,
                 List.of(List.of(item)));
 
-        when(itemService.searchItems("", SortType.NO, 1, 10))
+        when(itemService.searchItems("", SortType.NO, 1, 10, StringUtils.EMPTY))
                 .thenReturn(Mono.just(searchResult));
 
         webTestClient.get()
@@ -95,8 +120,9 @@ class StoreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
     void shouldModifyItemInCart() {
-        when(itemService.updateCartItem(eq(1L), eq(ItemAction.plus)))
+        when(itemService.updateCartItem(eq(1L), eq(ItemAction.plus), eq("testuser")))
                 .thenReturn(Mono.empty());
 
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
@@ -112,6 +138,7 @@ class StoreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
     void shouldGetCartItems() {
         Item item = createTestItem(1L, "Test Item", 10.0);
         CartItemListDto cartDto = new CartItemListDto(
@@ -119,7 +146,7 @@ class StoreControllerTest {
                 10.00,
                 false);
 
-        when(itemService.getCartItemListDto())
+        when(itemService.getCartItemListDto("testuser"))
                 .thenReturn(Mono.just(cartDto));
 
         webTestClient.get()
@@ -129,8 +156,9 @@ class StoreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
     void shouldModifyCartItem() {
-        when(itemService.updateCartItem(eq(1L), eq(ItemAction.minus)))
+        when(itemService.updateCartItem(eq(1L), eq(ItemAction.minus), eq("testuser")))
                 .thenReturn(Mono.empty());
 
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
@@ -146,9 +174,9 @@ class StoreControllerTest {
     }
 
     @Test
-    void shouldGetItem() {
+    void shouldGetItemWithAnonymousUser() {
         Item item = createTestItem(1L, "Test Item", 10.0);
-        when(itemService.getById(1L))
+        when(itemService.getById(1L, StringUtils.EMPTY))
                 .thenReturn(Mono.just(item));
 
         webTestClient.get()
@@ -158,8 +186,22 @@ class StoreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
+    void shouldGetItemWithRegisteredUser() {
+        Item item = createTestItem(1L, "Test Item", 10.0);
+        when(itemService.getById(1L, "testuser"))
+                .thenReturn(Mono.just(item));
+
+        webTestClient.get()
+                .uri("/items/1")
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
     void shouldModifyItemFromCard() {
-        when(itemService.updateCartItem(eq(1L), eq(ItemAction.plus)))
+        when(itemService.updateCartItem(eq(1L), eq(ItemAction.plus), eq("testuser")))
                 .thenReturn(Mono.empty());
 
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
@@ -175,6 +217,7 @@ class StoreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
     void shouldBuyItems() {
         Item item = createTestItem(1L, "Test Item", 10.0);
         CartItemListDto cartDto = new CartItemListDto(
@@ -183,11 +226,11 @@ class StoreControllerTest {
                 false);
         Order order = createTestOrder(1L);
 
-        when(itemService.getCartItemListDto())
+        when(itemService.getCartItemListDto("testuser"))
                 .thenReturn(Mono.just(cartDto));
-        when(paymentService.processOrderPayment(any()))
+        when(paymentService.processOrderPayment(any(), eq("testuser")))
                 .thenReturn(Mono.just(true));
-        when(orderService.createOrder())
+        when(orderService.createOrder("testuser"))
                 .thenReturn(Mono.just(order));
 
         webTestClient.post()
@@ -198,6 +241,7 @@ class StoreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
     void shouldGetOrders() {
         Order order1 = createTestOrder(1L);
         Order order2 = createTestOrder(2L);
@@ -208,7 +252,7 @@ class StoreControllerTest {
         OrderDto orderDto1 = new OrderDto(order1.getId(), order1.getCreatedAt(), order1.getTotalPrice(), testItems1);
         OrderDto orderDto2 = new OrderDto(order2.getId(), order2.getCreatedAt(), order2.getTotalPrice(), testItems2);
 
-        when(orderService.findAll()).thenReturn(Flux.just(orderDto1, orderDto2));
+        when(orderService.findAll("testuser")).thenReturn(Flux.just(orderDto1, orderDto2));
 
         webTestClient.get()
                 .uri("/orders")
@@ -217,6 +261,7 @@ class StoreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
     void shouldGetOrder() {
         Order order = createTestOrder(1L);
         List<Item> testItems = List.of(createTestItem(1L, "Test item 1", 10.0));
@@ -231,6 +276,7 @@ class StoreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
     void shouldGetOrderWithNewOrderFlag() {
         Order order = createTestOrder(1L);
         List<Item> testItems = List.of(createTestItem(1L, "Test item 1", 10.0));
@@ -245,6 +291,7 @@ class StoreControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", authorities = "USER")
     void shouldHandleInvalidItemAction() {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("action", "INVALID_ACTION");

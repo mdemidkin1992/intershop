@@ -56,7 +56,7 @@ services:
     networks:
       - app_network
     depends_on:
-#      - client-app
+      - client-app
       - keycloak
 
   keycloak:
