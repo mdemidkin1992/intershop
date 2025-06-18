@@ -17,7 +17,8 @@
             (
                 id          BIGSERIAL PRIMARY KEY,
                 created_at  TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                total_price DECIMAL(10, 2) NOT NULL
+                total_price DECIMAL(10, 2) NOT NULL,
+                user_id     BIGINT         NOT NULL REFERENCES users (id) ON DELETE CASCADE
             );
         </sql>
 

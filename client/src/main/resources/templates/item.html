@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <meta charset="UTF-8">
+
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
@@ -7,15 +8,30 @@
 </head>
 
 <body>
-    <a href="/orders" style="float:right;">
-        <b>ЗАКАЗЫ &cudarrr;</b>
-    </a>
-    <a href="/cart/items" style="float:right;">
-        <b>КОРЗИНА &cudarrr;</b>
-    </a>
-    <a href="/main/items" style="float:right;">
-        <b>ГЛАВНАЯ &cudarrr;</b>
-    </a>
+    <div th:if="${isAuthenticated}" style="float:right;">
+        <a href="/logout" style="margin-left: 10px;">
+            <b>ВЫЙТИ &cudarrr;</b>
+        </a>
+        <a href="/orders" style="margin-left: 10px;">
+            <b>ЗАКАЗЫ &cudarrr;</b>
+        </a>
+        <a href="/cart/items" style="margin-left: 10px;">
+            <b>КОРЗИНА &cudarrr;</b>
+        </a>
+        <a href="/main/items" style="margin-left: 10px;">
+            <b>ГЛАВНАЯ &cudarrr;</b>
+        </a>
+    </div>
+
+    <div th:unless="${isAuthenticated}" style="float:right;">
+        <a href="/login" style="margin-left: 10px;">
+            <b>ВОЙТИ &cudarrr;</b>
+        </a>
+        <a href="/main/items" style="margin-left: 10px;">
+            <b>ГЛАВНАЯ &cudarrr;</b>
+        </a>
+    </div>
+
     <div style="width:70%;margin-left:auto;margin-right:auto;">
         <p>
             <img width="300" height="300" th:src="${'http://localhost:8080/'+item.getImgPath()}">

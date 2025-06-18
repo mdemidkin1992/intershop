@@ -13,10 +13,30 @@
 ## Технологии
 
 * Spring Boot WebFlux (реактивный стек)
+* Spring Security (аутентификация и авторизация)
+* OAuth2 / OpenID Connect (Keycloak)
 * R2DBC (реактивная драйвер PostgreSQL)
 * Redis (кеш)
 * OpenAPI (автогенерация клиентов)
 * TestContainers
+
+## Безопасность
+
+#### Spring Security
+Приложение использует Spring Security для защиты ресурсов:
+
+- Форма входа для базовой аутентификации
+- Защита endpoints на основе ролей (USER)
+- CSRF защита для POST запросов
+- Сессии пользователей
+
+#### OAuth2 с Keycloak
+Используется для безопасного межсервисного взаимодействия:
+
+- Client Credentials Grant для сервис-сервис аутентификации
+- JWT токены для авторизации запросов между client и server
+- Автоматическое обновление токенов
+- Валидация токенов на стороне server
 
 ## Запуск проекта
 
@@ -26,6 +46,11 @@
 docker-compose up --build
 ```
 Приложение станет доступно по адресу `http://localhost:8080`
+
+## Тестовые учетные записи
+Для входа в систему используйте:
+* login: user1
+* password: password1
 
 ## API функционал витрины (Client - порт 8080)
 
@@ -87,3 +112,14 @@ gradle :server:test
 ```
 
 Отобразятся ссылки для просмотра отчетов тестирования.
+
+## Дополнительные настройки
+
+#### Keycloak (для межсервисного взаимодействия)
+Настройка Keycloak для Client Credentials Flow:
+
+* Keycloak запущен на порту `8180` (вход по admin/admin)
+* Создан realm intershop
+* Создан client intershop-client 
+* Включен Service Accounts Enabled
+* Скопирован client secret для использования в application.yaml

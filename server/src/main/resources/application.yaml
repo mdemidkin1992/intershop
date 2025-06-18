@@ -10,3 +10,11 @@ management:
   endpoint:
     health:
       show-details: always
+
+# Security
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8180/realms/intershop/protocol/openid-connect/certs

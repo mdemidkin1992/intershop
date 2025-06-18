@@ -5,26 +5,25 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
      https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
 
-    <changeSet id="04-create-cart-items-table" author="Maxim Demidkin">
+    <changeSet id="05-create-users-table" author="Maxim Demidkin">
         <preConditions onFail="MARK_RAN">
             <not>
-                <tableExists tableName="cart_items"/>
+                <tableExists tableName="users"/>
             </not>
         </preConditions>
 
         <sql>
-            CREATE TABLE cart_items
+            CREATE TABLE users
             (
                 id       BIGSERIAL PRIMARY KEY,
-                item_id  BIGINT NOT NULL REFERENCES items (id),
-                quantity INT    NOT NULL,
-                user_id  BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-                CONSTRAINT unique_cart_item UNIQUE (item_id, user_id)
+                username VARCHAR(255) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                role     VARCHAR(255) NOT NULL
             );
         </sql>
 
         <rollback>
-            DROP TABLE IF EXISTS cart_items;
+            DROP TABLE IF EXISTS users;
         </rollback>
     </changeSet>
 
