@@ -44,6 +44,7 @@ public class StoreController {
         String username = principal != null
                 ? principal.getName()
                 : StringUtils.EMPTY;
+        boolean isAuthenticated = principal != null;
 
         return itemService.searchItems(search, sort, pageNumber, pageSize, username)
                 .map(result -> {
@@ -51,6 +52,7 @@ public class StoreController {
                     model.addAttribute("search", result.search());
                     model.addAttribute("sort", result.sortType());
                     model.addAttribute("paging", result.responsePagingDto());
+                    model.addAttribute("isAuthenticated", isAuthenticated);
                     return "main";
                 });
     }
@@ -101,10 +103,12 @@ public class StoreController {
         String username = principal != null
                 ? principal.getName()
                 : StringUtils.EMPTY;
+        boolean isAuthenticated = principal != null;
 
         return itemService.getById(id, username)
                 .map(item -> {
                     model.addAttribute("item", item);
+                    model.addAttribute("isAuthenticated", isAuthenticated);
                     return "item";
                 });
     }

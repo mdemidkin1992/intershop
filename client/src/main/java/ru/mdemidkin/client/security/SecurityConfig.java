@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers("/", "/login", "/logout", "/main/items").permitAll()
+                        .pathMatchers("/static/**", "/*.jpg").permitAll()
                         .pathMatchers(HttpMethod.GET, "/items/{id}").permitAll()
                         .anyExchange().authenticated())
                 .formLogin(withDefaults())
