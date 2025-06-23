@@ -10,6 +10,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.mdemidkin.client.model.CartItem;
 import ru.mdemidkin.client.repository.CartRepository;
+import ru.mdemidkin.client.security.User;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -21,16 +22,20 @@ class CartServiceUnitTest {
     @Mock
     private CartRepository cartRepository;
 
+    @Mock
+    private UserService userService;
+
     @InjectMocks
     private CartService cartService;
 
     @Test
     void findItemById_shouldReturnCartItem() {
-        CartItem item = CartItem.builder().id(1L).itemId(2L).quantity(3).build();
-        when(cartRepository.findByItemId(2L)).thenReturn(Mono.just(item));
+        CartItem item = CartItem.builder().id(1L).itemId(2L).quantity(3).userId(1L).build();
+        when(cartRepository.findByItemIdAndUserId(2L, 1L)).thenReturn(Mono.just(item));
 
-        cartService.findItemById(2L)
+        cartService.findCartItem(2L, 1L)
                 .doOnNext(found -> {
+                    assertEquals(1L, found.getUserId());
                     assertEquals(2L, found.getItemId());
                     assertEquals(3, found.getQuantity());
                 })
@@ -39,17 +44,18 @@ class CartServiceUnitTest {
 
     @Test
     void saveOrUpdate_shouldSaveItem() {
-        CartItem item = CartItem.builder().itemId(2L).quantity(1).build();
+        CartItem item = CartItem.builder().itemId(2L).quantity(1).userId(1L).build();
         when(cartRepository.save(item)).thenReturn(Mono.just(item));
 
         CartItem saved = cartService.saveOrUpdate(item).block();
         assertNotNull(saved);
         assertEquals(2L, saved.getItemId());
+        assertEquals(1L, saved.getUserId());
     }
 
     @Test
     void delete_shouldCompleteSuccessfully() {
-        CartItem item = CartItem.builder().id(1L).itemId(2L).build();
+        CartItem item = CartItem.builder().id(1L).itemId(2L).userId(1L).build();
         when(cartRepository.delete(item)).thenReturn(Mono.empty());
 
         Assertions.assertDoesNotThrow(() -> cartService.delete(item).block());
@@ -57,18 +63,31 @@ class CartServiceUnitTest {
 
     @Test
     void getAll_shouldReturnAllItems() {
-        CartItem a = CartItem.builder().id(1L).itemId(2L).build();
-        CartItem b = CartItem.builder().id(2L).itemId(3L).build();
-        when(cartRepository.findAll()).thenReturn(Flux.just(a, b));
+        String username = "user";
+        Long userId = 1L;
 
-        var list = cartService.getAll().collectList().block();
+        User user = User.builder()
+                .id(userId)
+                .username(username)
+                .build();
+
+        CartItem a = CartItem.builder().id(1L).itemId(2L).userId(userId).build();
+        CartItem b = CartItem.builder().id(2L).itemId(3L).userId(userId).build();
+
+        when(userService.findByUsername(username)).thenReturn(Mono.just(user));
+        when(cartRepository.findAllByUserId(userId)).thenReturn(Flux.just(a, b));
+
+        var list = cartService.getAll(username).collectList().block();
         assertNotNull(list);
         assertEquals(2, list.size());
+        assertEquals(userId, list.get(0).getUserId());
+        assertEquals(userId, list.get(1).getUserId());
     }
 
     @Test
     void clearCart_shouldCompleteSuccessfully() {
-        when(cartRepository.deleteAll()).thenReturn(Mono.empty());
-        Assertions.assertDoesNotThrow(() -> cartService.clearCart().block());
+        Long userId = 1L;
+        when(cartRepository.deleteAllByUserId(userId)).thenReturn(Mono.empty());
+        Assertions.assertDoesNotThrow(() -> cartService.clearCart(userId).block());
     }
 }

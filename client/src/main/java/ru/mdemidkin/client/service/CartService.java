@@ -15,29 +15,31 @@ import ru.mdemidkin.client.repository.CartRepository;
 public class CartService {
 
     private final CartRepository cartItemRepository;
+    private final UserService userService;
 
-    @Cacheable(cacheNames = "cartItem", key = "#itemId")
-    public Mono<CartItem> findItemById(Long itemId) {
-        return cartItemRepository.findByItemId(itemId);
+    @Cacheable(cacheNames = "cartItem", key = "{#itemId, #userId}")
+    public Mono<CartItem> findCartItem(Long itemId, Long userId) {
+        return cartItemRepository.findByItemIdAndUserId(itemId, userId);
     }
 
-    @CachePut(cacheNames = "cartItem", key = "#cartItem.itemId")
+    @CachePut(cacheNames = "cartItem", key = "{#cartItem.itemId, #cartItem.userId}")
     public Mono<CartItem> saveOrUpdate(CartItem cartItem) {
         return cartItemRepository.save(cartItem);
     }
 
-    @CacheEvict(cacheNames = "cartItem", key = "#cartItem.itemId")
+    @CacheEvict(cacheNames = "cartItem", key = "{#cartItem.itemId, #cartItem.userId}")
     public Mono<Void> delete(CartItem cartItem) {
         return cartItemRepository.delete(cartItem);
     }
 
-    public Flux<CartItem> getAll() {
-        return cartItemRepository.findAll();
+    public Flux<CartItem> getAll(String username) {
+        return userService.findByUsername(username)
+                .flatMapMany(user -> cartItemRepository.findAllByUserId(user.getId()));
     }
 
     @CacheEvict(cacheNames = {"cartItem"}, allEntries = true)
-    public Mono<Void> clearCart() {
-        return cartItemRepository.deleteAll();
+    public Mono<Void> clearCart(Long userId) {
+        return cartItemRepository.deleteAllByUserId(userId);
     }
 
 }

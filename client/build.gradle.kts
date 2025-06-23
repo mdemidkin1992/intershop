@@ -31,6 +31,8 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.5")
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
     implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
     runtimeOnly("org.postgresql:postgresql:42.7.2")
     compileOnly("org.projectlombok:lombok")
@@ -43,6 +45,7 @@ dependencies {
     testImplementation("org.testcontainers:r2dbc")
     testImplementation("com.github.codemonstur:embedded-redis:1.4.3")
     testImplementation("com.redis:testcontainers-redis:2.2.2")
+    testImplementation("org.springframework.security:spring-security-test")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testCompileOnly("org.projectlombok:lombok")

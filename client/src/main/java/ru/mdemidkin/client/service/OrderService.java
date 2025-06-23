@@ -29,10 +29,12 @@ public class OrderService {
     private final CartService cartService;
     private final OrderItemRepository orderItemRepository;
     private final OrderMapper mapper;
+    private final UserService userService;
 
-    @Cacheable(cacheNames = "orders")
-    public Flux<OrderDto> findAll() {
-        return orderRepository.findAll()
+    @Cacheable(cacheNames = "orders", key = "#userName")
+    public Flux<OrderDto> findAll(String userName) {
+        return userService.findByUsername(userName)
+                .flatMapMany(user -> orderRepository.findAllByUserId(user.getId()))
                 .flatMap(order -> itemService.getByOrderId(order.getId())
                         .map(items -> mapper.toDto(order, items)));
     }
@@ -47,19 +49,20 @@ public class OrderService {
     @Caching(evict = {
             @CacheEvict(cacheNames = {"cartItems"}, allEntries = true),
             @CacheEvict(cacheNames = {"searchItems"}, allEntries = true)})
-    public Mono<Order> createOrder() {
-        return itemService.getCartItemListDto()
-                .map(CartItemListDto::items)
-                .flatMap(this::buildOrderWithItems)
-                .flatMap(this::saveOrderWithItems)
-                .flatMap(this::clearCart);
+    public Mono<Order> createOrder(String username) {
+        return userService.findByUsername(username)
+                .flatMap(user -> itemService.getCartItemListDto(username)
+                        .map(CartItemListDto::items)
+                        .flatMap(items -> buildOrderWithItems(items, user.getId()))
+                        .flatMap(this::saveOrderWithItems)
+                        .flatMap(order -> clearCart(order, user.getId())));
     }
 
-    private Mono<Order> buildOrderWithItems(List<Item> items) {
+    private Mono<Order> buildOrderWithItems(List<Item> items, Long userId) {
         Order order = new Order();
         order.setCreatedAt(LocalDateTime.now());
         order.setOrderItems(new ArrayList<>());
-
+        order.setUserId(userId);
 
         for (Item item : items) {
             OrderItem orderItem = OrderItem.builder()
@@ -93,8 +96,8 @@ public class OrderService {
                 });
     }
 
-    private Mono<Order> clearCart(Order order) {
-        return cartService.clearCart().thenReturn(order);
+    private Mono<Order> clearCart(Order order, Long userId) {
+        return cartService.clearCart(userId).thenReturn(order);
     }
 
 }

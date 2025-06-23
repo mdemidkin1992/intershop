@@ -19,11 +19,10 @@ public class PaymentService {
     private final HealthApi healthApi;
     private final PaymentsApi paymentsApi;
 
-    public Mono<Boolean> processOrderPayment(Double totalPrice) {
-        final String userId = UUID.randomUUID().toString();
+    public Mono<Boolean> processOrderPayment(Double totalPrice, String username) {
         return checkHealth()
-                .flatMap(healthStatus -> checkBalance(healthStatus, totalPrice, userId))
-                .flatMap(balanceStatus -> processPayment(balanceStatus, totalPrice, userId));
+                .flatMap(healthStatus -> checkBalance(healthStatus, totalPrice, username))
+                .flatMap(balanceStatus -> processPayment(balanceStatus, totalPrice, username));
     }
 
     private Mono<Boolean> checkHealth() {

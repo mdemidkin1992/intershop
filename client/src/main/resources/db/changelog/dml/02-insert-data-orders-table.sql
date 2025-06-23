@@ -1,3 +1,3 @@
-INSERT INTO orders (created_at, total_price)
-VALUES (CURRENT_TIMESTAMP - INTERVAL '1 DAY', 2899.97),
-       (CURRENT_TIMESTAMP - INTERVAL '2 DAYS', 1999.98);
+INSERT INTO orders (created_at, total_price, user_id)
+VALUES (CURRENT_TIMESTAMP - INTERVAL '1 DAY', 2899.97, 1),
+       (CURRENT_TIMESTAMP - INTERVAL '2 DAYS', 1999.98, 1);

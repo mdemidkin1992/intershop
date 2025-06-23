@@ -35,4 +35,7 @@ public class Order {
 
     @Transient
     private List<OrderItem> orderItems;
+
+    @Column("user_id")
+    private Long userId;
 }
