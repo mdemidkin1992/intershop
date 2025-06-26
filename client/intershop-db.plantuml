@@ -7,6 +7,7 @@ skinparam linetype ortho
 class cart_items {
    item_id: bigint
    quantity: integer
+   user_id: bigint
    id: bigint
 }
 class items {
@@ -27,10 +28,19 @@ class order_items {
 class orders {
    created_at: timestamp
    total_price: numeric(10,2)
+   user_id: bigint
+   id: bigint
+}
+class users {
+   username: varchar(255)
+   password: varchar(255)
+   role: varchar(255)
    id: bigint
 }
 
 cart_items             -[#595959,plain]-^  items                 : "item_id:id"
+cart_items             -[#595959,plain]-^  users                 : "user_id:id"
 order_items            -[#595959,plain]-^  items                 : "item_id:id"
 order_items            -[#595959,plain]-^  orders                : "order_id:id"
+orders                 -[#595959,plain]-^  users                 : "user_id:id"
 @enduml

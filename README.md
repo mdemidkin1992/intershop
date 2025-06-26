@@ -75,7 +75,7 @@ docker-compose up --build
 
 Схема описана в UML файле `client/db.plantuml`
 
-![Image](https://github.com/user-attachments/assets/a4eafe44-f122-454a-963b-124d1ecf78fc)
+![Image](https://github.com/user-attachments/assets/d0f713ad-a464-42e1-8536-29bbec502949)
 
 ## Кеширование
 
